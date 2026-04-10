@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Adesão Pesquisa de Clima - Creditas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        :root { --green: #00ff5f; --bg: #121212; --card: #1e1e1e; --text: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .header { border-bottom: 2px solid var(--green); padding-bottom: 10px; margin-bottom: 20px; }
+        .upload-area { background: var(--card); padding: 20px; border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: end; margin-bottom: 20px; }
+        .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        select, button { background: #333; color: white; border: 1px solid #444; padding: 10px; border-radius: 5px; cursor: pointer; }
+        button { background: var(--green); color: black; font-weight: bold; border: none; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--card); padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid var(--green); }
+        .card div { font-size: 2.5em; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { color: var(--green); text-transform: uppercase; font-size: 0.8em; }
+        .progress-bar { background: #444; border-radius: 10px; height: 10px; width: 100%; }
+        .progress-fill { background: var(--green); height: 100%; border-radius: 10px; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Acompanhamento de Adesão 2026</h1>
+</div>
+
+<div class="upload-area">
+    <div><label>Planilha Mestra (Base Total):</label><br><input type="file" id="baseTotal"></div>
+    <div><label>Relatório de Respostas:</label><br><input type="file" id="respostas"></div>
+    <button onclick="processar()">ATUALIZAR DADOS</button>
+</div>
+
+<div class="filters" id="filterGroup" style="display:none;">
+    <select id="fBU" onchange="render()"><option value="">BU (Todas)</option></select>
+    <select id="fN1" onchange="render()"><option value="">Nível 1 (Todos)</option></select>
+    <select id="fN2" onchange="render()"><option value="">Nível 2 (Todos)</option></select>
+    <select id="fLider" onchange="render()"><option value="">Liderança (Todas)</option></select>
+</div>
+
+<div class="stats">
+    <div class="card"><h3>Público Alvo</h3><div id="vTotal">0</div></div>
+    <div class="card"><h3>Respondidos</h3><div id="vRes">0</div></div>
+    <div class="card"><h3>% Adesão</h3><div id="vPerc">0%</div></div>
+</div>
+
+<table id="tabelaLideranca">
+    <thead>
+        <tr><th>Liderança</th><th>Time</th><th>Adesão</th><th>%</th></tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+let mestre = [], res = [];
+
+async function processar() {
+    const f1 = document.getElementById('baseTotal').files[0];
+    const f2 = document.getElementById('respostas').files[0];
+    if(!f1 || !f2) return alert("Selecione os dois arquivos!");
+
+    mestre = await parse(f1);
+    res = await parse(f2);
+    
+    fillFilters();
+    document.getElementById('filterGroup').style.display = 'grid';
+    render();
+}
+
+function parse(file) {
+    return new Promise(r => {
+        Papa.parse(file, { header: true, skipEmptyLines: true, complete: res => r(res.data) });
+    });
+}
+
+function fillFilters() {
+    const map = { 'fBU': 'BU', 'fN1': 'Nível 1', 'fN2': 'Nível 2', 'fLider': 'Liderança - Nome' };
+    for(let id in map) {
+        const el = document.getElementById(id);
+        const vals = [...new Set(mestre.map(i => i[map[id]]))].sort();
+        el.innerHTML = `<option value="">${map[id]} (Todos)</option>` + vals.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+}
+
+function render() {
+    const f = { bu: document.getElementById('fBU').value, n1: document.getElementById('fN1').value, n2: document.getElementById('fN2').value, lid: document.getElementById('fLider').value };
+    
+    const filtradosMestre = mestre.filter(i => (!f.bu || i.BU === f.bu) && (!f.n1 || i['Nível 1'] === f.n1) && (!f.n2 || i['Nível 2'] === f.n2) && (!f.lid || i['Liderança - Nome'] === f.lid));
+    
+    // Cruzamento dinâmico: busca o e-mail da mestre na lista de respondentes (Filtro_filtro_matrícula ou similar)
+    const respondentesEmails = new Set(res.map(r => r.Filtro_filtro_lider_direto)); // Simplificado para o exemplo
+
+    const respondidos = filtradosMestre.filter(i => res.some(r => r.Filtro_filtro_lider_direto.toLowerCase() === i['Liderança - Nome'].toLowerCase())).length;
+
+    document.getElementById('vTotal').innerText = filtradosMestre.length;
+    document.getElementById('vRes').innerText = respondidos;
+    const p = filtradosMestre.length ? (respondidos / filtradosMestre.length * 100).toFixed(1) : 0;
+    document.getElementById('vPerc').innerText = p + '%';
+
+    const tbody = document.querySelector('#tabelaLideranca tbody');
+    tbody.innerHTML = "";
+    const lideres = [...new Set(filtradosMestre.map(i => i['Liderança - Nome']))];
+    
+    lideres.forEach(l => {
+        const totalL = filtradosMestre.filter(i => i['Liderança - Nome'] === l).length;
+        const resL = res.filter(r => r.Filtro_filtro_lider_direto.toLowerCase() === l.toLowerCase()).length;
+        const percL = (resL / totalL * 100).toFixed(1);
+        tbody.innerHTML += `<tr><td>${l}</td><td>${totalL}</td><td>${resL}</td><td><div class="progress-bar"><div class="progress-fill" style="width:${percL}%"></div></div> ${percL}%</td></tr>`;
+    });
+}
+</script>
+</body>
+</html>
