@@ -2,215 +2,297 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Adesão Pesquisa de Clima - Creditas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adesão Pesquisa de Clima | Creditas</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        :root { --green: #00ff5f; --bg: #121212; --card: #1e1e1e; --text: #ffffff; --row-hover: #252525; }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
-        .header { border-bottom: 2px solid var(--green); padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { margin: 0; font-size: 1.8rem; letter-spacing: -1px; }
-        
-        /* Upload Area */
-        .upload-area { background: var(--card); padding: 25px; border-radius: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) auto; gap: 20px; align-items: end; margin-bottom: 25px; border: 1px solid #333; }
-        .file-input-group label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #aaa; font-weight: bold; }
-        input[type="file"] { background: #2a2a2a; padding: 8px; border-radius: 6px; border: 1px solid #444; width: 100%; box-sizing: border-box; }
-        
-        .btn-update { background: var(--green); color: #000; border: none; padding: 12px 25px; border-radius: 6px; font-weight: 800; cursor: pointer; transition: transform 0.2s, opacity 0.2s; height: 45px; text-transform: uppercase; }
-        .btn-update:hover { opacity: 0.9; transform: translateY(-1px); }
+        :root {
+            --creditas-green: #8EDB00;
+            --dark-gray: #2D3A4B;
+            --light-bg: #F4F7F6;
+            --white: #FFFFFF;
+            --border-color: #E0E4E8;
+            --text-main: #333333;
+        }
 
-        /* Filtros */
-        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; background: #1a1a1a; padding: 20px; border-radius: 12px; border: 1px solid #333; }
-        .filter-item label { display: block; font-size: 0.75rem; color: var(--green); text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
-        select { background: #2a2a2a; color: white; border: 1px solid #444; padding: 10px; border-radius: 6px; width: 100%; cursor: pointer; font-size: 0.9rem; }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+        }
 
-        /* Stats */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: var(--card); padding: 25px; border-radius: 15px; text-align: center; border-bottom: 4px solid #333; transition: border-color 0.3s; }
-        .stat-card:hover { border-color: var(--green); }
-        .stat-card h3 { margin: 0; font-size: 0.9rem; color: #888; text-transform: uppercase; }
-        .stat-card .value { font-size: 2.8rem; font-weight: 800; margin: 10px 0; color: #fff; }
-        .stat-card .label { font-size: 0.8rem; color: var(--green); }
+        .header {
+            background-color: var(--white);
+            padding: 20px 40px;
+            border-bottom: 4px solid var(--creditas-green);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .header h1 { margin: 0; font-size: 22px; color: var(--dark-gray); text-transform: uppercase; letter-spacing: 1px; }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+
+        /* Upload Box */
+        .upload-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .file-input-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px; color: var(--dark-gray); }
+        input[type="file"] { border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; width: 100%; cursor: pointer; }
+
+        .btn-process {
+            background-color: var(--dark-gray);
+            color: var(--creditas-green);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-process:hover { background-color: #1a232c; transform: translateY(-2px); }
+
+        /* Filters Section */
+        .filter-section {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .filter-group label { display: block; font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: #fafafa;
+            font-size: 14px;
+        }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            border-top: 5px solid var(--creditas-green);
+        }
+        .stat-card h3 { margin: 0; font-size: 14px; color: #777; text-transform: uppercase; }
+        .stat-card .value { font-size: 48px; font-weight: 900; margin: 10px 0; color: var(--dark-gray); }
 
         /* Table */
-        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #333; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th { background: #252525; padding: 15px; text-align: left; color: var(--green); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-        td { padding: 15px; border-bottom: 1px solid #2a2a2a; font-size: 0.95rem; }
-        tr:hover { background: var(--row-hover); }
-        
-        .progress-box { display: flex; align-items: center; gap: 12px; width: 200px; }
-        .bar-bg { background: #333; height: 8px; border-radius: 10px; flex-grow: 1; overflow: hidden; }
-        .bar-fill { background: var(--green); height: 100%; border-radius: 10px; transition: width 0.8s cubic-bezier(0.1, 0.5, 0.5, 1); }
-        .perc-text { font-weight: bold; min-width: 45px; font-size: 0.85rem; }
-        
-        .empty-state { padding: 40px; text-align: center; color: #666; }
+        .table-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        th { background-color: #F9FAFB; padding: 15px; text-align: left; font-size: 12px; text-transform: uppercase; color: #666; border-bottom: 2px solid var(--border-color); }
+        td { padding: 15px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        tr:hover { background-color: #FDFDFD; }
+
+        .progress-bar-container { display: flex; align-items: center; gap: 10px; }
+        .progress-bar { background: #E0E0E0; border-radius: 10px; height: 10px; width: 120px; overflow: hidden; }
+        .progress-fill { background: var(--creditas-green); height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+        .badge { font-weight: bold; padding: 4px 8px; border-radius: 5px; font-size: 12px; }
+        .high { background: #e6ffed; color: #22863a; }
+        .low { background: #fff5f5; color: #cb2431; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>ADESÃO PESQUISA DE CLIMA</h1>
-    <div id="lastUpdate" style="font-size: 0.8rem; color: #666;"></div>
-</div>
-
-<div class="upload-area">
-    <div class="file-input-group">
-        <label>1. BASE TOTAL (Tripulantes)</label>
-        <input type="file" id="csvMestre" accept=".csv">
+    <div class="header">
+        <h1>Dashboard de Adesão | Pesquisa de Clima</h1>
     </div>
-    <div class="file-input-group">
-        <label>2. RESPOSTAS (Adesão)</label>
-        <input type="file" id="csvRes" accept=".csv">
+
+    <div class="container">
+        <div class="upload-card">
+            <div class="file-input-group">
+                <label>1. BASE TOTAL (.CSV)</label>
+                <input type="file" id="fileBase" accept=".csv">
+            </div>
+            <div class="file-input-group">
+                <label>2. RELATÓRIO RESPOSTAS (.CSV)</label>
+                <input type="file" id="fileRes" accept=".csv">
+            </div>
+            <button class="btn-process" onclick="processarArquivos()">CARREGAR DASHBOARD</button>
+        </div>
+
+        <div class="filter-section" id="filterArea" style="display: none;">
+            <div class="filter-group"><label>BU</label><select id="selBU" onchange="filtroAlterado()"></select></div>
+            <div class="filter-group"><label>Nível 1</label><select id="selN1" onchange="filtroAlterado()"></select></div>
+            <div class="filter-group"><label>Nível 2</label><select id="selN2" onchange="filtroAlterado()"></select></div>
+            <div class="filter-group"><label>Nível 3</label><select id="selN3" onchange="filtroAlterado()"></select></div>
+            <div class="filter-group"><label>Liderança</label><select id="selLid" onchange="filtroAlterado()"></select></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><h3>Público Total</h3><div class="value" id="valTotal">0</div></div>
+            <div class="stat-card"><h3>Respondidos</h3><div class="value" id="valRes">0</div></div>
+            <div class="stat-card"><h3>% Adesão</h3><div class="value" id="valPerc" style="color: var(--creditas-green);">0%</div></div>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Liderança / Grupo</th>
+                        <th>Total de Pessoas</th>
+                        <th>Adesão Realizada</th>
+                        <th>% de Engajamento</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="4" style="text-align: center; color: #999; padding: 40px;">Suba os arquivos para ver os dados.</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-    <button class="btn-update" onclick="loadData()">Processar</button>
-</div>
 
-<div class="filters-grid" id="filterArea" style="display:none;">
-    <div class="filter-item"><label>BU</label><select id="selBU" onchange="apply()"></select></div>
-    <div class="filter-item"><label>Nível 1</label><select id="selN1" onchange="apply()"></select></div>
-    <div class="filter-item"><label>Nível 2</label><select id="selN2" onchange="apply()"></select></div>
-    <div class="filter-item"><label>Liderança</label><select id="selLid" onchange="apply()"></select></div>
-</div>
+    <script>
+        let baseTotal = [];
+        let baseRespostas = [];
 
-<div class="stats-grid">
-    <div class="stat-card"><h3>Público Alvo</h3><div class="value" id="countTotal">0</div><div class="label">Tripulantes</div></div>
-    <div class="stat-card"><h3>Respondidos</h3><div class="value" id="countRes">0</div><div class="label">Participações</div></div>
-    <div class="stat-card"><h3>Adesão Atual</h3><div class="value" id="countPerc">0%</div><div class="label" id="statusLabel">Aguardando dados</div></div>
-</div>
+        function processarArquivos() {
+            const f1 = document.getElementById('fileBase').files[0];
+            const f2 = document.getElementById('fileRes').files[0];
 
-<div class="table-container">
-    <table id="tableLid">
-        <thead>
-            <tr>
-                <th>Liderança Direta</th>
-                <th>Time Total</th>
-                <th>Respostas</th>
-                <th>Adesão (%)</th>
-            </tr>
-        </thead>
-        <tbody id="tbody">
-            <tr><td colspan="4" class="empty-state">Faça o upload dos arquivos para visualizar o detalhamento.</td></tr>
-        </tbody>
-    </table>
-</div>
+            if(!f1 || !f2) return alert("Anexe as duas bases para continuar.");
 
-<script>
-let mestreRaw = [], respostasRaw = [];
+            Papa.parse(f1, {
+                header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    baseTotal = results.data;
+                    Papa.parse(f2, {
+                        header: true, skipEmptyLines: true,
+                        complete: function(res) {
+                            baseRespostas = res.data;
+                            inicializarFiltros();
+                            document.getElementById('filterArea').style.display = 'grid';
+                            calcular();
+                        }
+                    });
+                }
+            });
+        }
 
-// Função para normalizar texto (remover acentos e espaços extras)
-const normalize = (text) => {
-    if (!text) return "";
-    return text.toString().toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .trim();
-};
+        function inicializarFiltros() {
+            popularDropdown('selBU', 'BU');
+            popularDropdown('selN1', 'Nível 1');
+            popularDropdown('selN2', 'Nível 2');
+            popularDropdown('selN3', 'Nível 3');
+            popularDropdown('selLid', 'Liderança - Nome');
+        }
 
-async function loadData() {
-    const fMestre = document.getElementById('csvMestre').files[0];
-    const fRes = document.getElementById('csvRes').files[0];
+        function popularDropdown(elementId, columnName) {
+            const select = document.getElementById(elementId);
+            const values = [...new Set(baseTotal.map(i => i[columnName]))].filter(Boolean).sort();
+            select.innerHTML = '<option value="">Todos</option>' + values.map(v => `<option value="${v}">${v}</option>`).join('');
+        }
 
-    if (!fMestre || !fRes) return alert("Selecione os dois arquivos CSV!");
+        function filtroAlterado() {
+            // Implementação simples de filtros encadeados baseada na Base Total
+            const bu = document.getElementById('selBU').value;
+            const n1 = document.getElementById('selN1').value;
+            
+            // Se mudar a BU, poderíamos limpar ou restringir os outros, 
+            // mas por agora vamos manter a lógica de interseção global para não travar a experiência.
+            calcular();
+        }
 
-    mestreRaw = await parseCSV(fMestre);
-    respostasRaw = await parseCSV(fRes);
+        function normalizar(txt) {
+            return txt ? txt.toString().toLowerCase().trim() : "";
+        }
 
-    buildFilters();
-    document.getElementById('filterArea').style.display = 'grid';
-    document.getElementById('lastUpdate').innerText = "Última atualização: " + new Date().toLocaleTimeString();
-    apply();
-}
+        function calcular() {
+            const fBU = document.getElementById('selBU').value;
+            const fN1 = document.getElementById('selN1').value;
+            const fN2 = document.getElementById('selN2').value;
+            const fN3 = document.getElementById('selN3').value;
+            const fLid = document.getElementById('selLid').value;
 
-function parseCSV(file) {
-    return new Promise(resolve => {
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: res => resolve(res.data)
-        });
-    });
-}
+            // Filtrar Base Total (O "Denominador")
+            const filtradosTotal = baseTotal.filter(i => {
+                return (!fBU || i['BU'] === fBU) &&
+                       (!fN1 || i['Nível 1'] === fN1) &&
+                       (!fN2 || i['Nível 2'] === fN2) &&
+                       (!fN3 || i['Nível 3'] === fN3) &&
+                       (!fLid || i['Liderança - Nome'] === fLid);
+            });
 
-function buildFilters() {
-    const filters = [
-        { id: 'selBU', col: 'BU' },
-        { id: 'selN1', col: 'Nível 1' },
-        { id: 'selN2', col: 'Nível 2' },
-        { id: 'selLid', col: 'Liderança - Nome' }
-    ];
+            // Filtrar Base Respostas (O "Numerador")
+            // Mapeamos os campos equivalentes no arquivo de respostas
+            const filtradosRes = baseRespostas.filter(r => {
+                const matchBU = !fBU || normalizar(r['Filtro_bu']) === normalizar(fBU);
+                const matchN1 = !fN1 || normalizar(r['Filtro_nível_1']) === normalizar(fN1);
+                const matchN2 = !fN2 || normalizar(r['Filtro_nível_2']) === normalizar(fN2);
+                const matchN3 = !fN3 || normalizar(r['Filtro_nível_3']) === normalizar(fN3);
+                const matchLid = !fLid || normalizar(r['Filtro_lider_direto']) === normalizar(fLid);
+                return matchBU && matchN1 && matchN2 && matchN3 && matchLid;
+            });
 
-    filters.forEach(f => {
-        const select = document.getElementById(f.id);
-        const uniqueValues = [...new Set(mestreRaw.map(item => item[f.col]))].filter(Boolean).sort();
-        select.innerHTML = `<option value="">Todos</option>` + 
-            uniqueValues.map(v => `<option value="${v}">${v}</option>`).join('');
-    });
-}
+            // Update Cards
+            const totalCount = filtradosTotal.length;
+            const resCount = filtradosRes.length;
+            const perc = totalCount > 0 ? (resCount / totalCount * 100).toFixed(1) : 0;
 
-function apply() {
-    const fBU = document.getElementById('selBU').value;
-    const fN1 = document.getElementById('selN1').value;
-    const fN2 = document.getElementById('selN2').value;
-    const fLid = document.getElementById('selLid').value;
+            document.getElementById('valTotal').innerText = totalCount;
+            document.getElementById('valRes').innerText = resCount;
+            document.getElementById('valPerc').innerText = perc + "%";
 
-    // 1. Filtrar Base Total
-    const filteredMestre = mestreRaw.filter(i => 
-        (!fBU || i['BU'] === fBU) &&
-        (!fN1 || i['Nível 1'] === fN1) &&
-        (!fN2 || i['Nível 2'] === fN2) &&
-        (!fLid || i['Liderança - Nome'] === fLid)
-    );
+            // Update Table by Leadership
+            renderizarTabela(filtradosTotal);
+        }
 
-    // 2. Mapear Respondentes Únicos (Normalizados)
-    // Usamos o nome do Líder que aparece no arquivo de respostas para cruzar
-    const respondentes = respostasRaw.map(r => normalize(r['Filtro_lider_direto']));
+        function renderizarTabela(dadosFiltrados) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = "";
 
-    // 3. Contagem de Respondidos dentro do filtro
-    // Um tripulante é considerado "respondido" se o nome da liderança dele está na lista de respondentes
-    // Nota: Como os dados de respostas são anônimos por respondente, o cruzamento é feito pela volumetria da liderança.
-    
-    let totalFiltrado = filteredMestre.length;
-    
-    // Para o cálculo global do dashboard
-    const respondidosCount = respostasRaw.filter(r => {
-        const lidRes = normalize(r['Filtro_lider_direto']);
-        // Verifica se esse respondente pertence ao grupo filtrado da Base Total
-        return filteredMestre.some(m => normalize(m['Liderança - Nome']) === lidRes);
-    }).length;
+            // Agrupa por líder dentro da seleção atual
+            const lideres = [...new Set(dadosFiltrados.map(i => i['Liderança - Nome']))].filter(Boolean);
 
-    // Atualizar UI
-    document.getElementById('countTotal').innerText = totalFiltrado;
-    document.getElementById('countRes').innerText = respondidosCount;
-    
-    const globalPerc = totalFiltrado > 0 ? (respondidosCount / totalFiltrado * 100).toFixed(1) : 0;
-    document.getElementById('countPerc').innerText = globalPerc + "%";
-    document.getElementById('statusLabel').innerText = globalPerc >= 80 ? "Meta Atingida" : "Em progresso";
+            if (lideres.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">Nenhum dado encontrado.</td></tr>';
+                return;
+            }
 
-    // 4. Renderizar Tabela
-    const tbody = document.getElementById('tbody');
-    tbody.innerHTML = "";
-    
-    const lideresUnicos = [...new Set(filteredMestre.map(i => i['Liderança - Nome']))];
+            lideres.forEach(lider => {
+                const totalNoTime = baseTotal.filter(i => i['Liderança - Nome'] === lider).length;
+                const resNoTime = baseRespostas.filter(r => normalizar(r['Filtro_lider_direto']) === normalizar(lider)).length;
+                const perc = totalNoTime > 0 ? (resNoTime / totalNoTime * 100).toFixed(1) : 0;
 
-    lideresUnicos.forEach(lidNome => {
-        const totalNoTime = mestreRaw.filter(m => m['Liderança - Nome'] === lidNome).length;
-        const respostasNoTime = respostasRaw.filter(r => normalize(r['Filtro_lider_direto']) === normalize(lidNome)).length;
-        const perc = totalNoTime > 0 ? (respostasNoTime / totalNoTime * 100).toFixed(1) : 0;
-
-        tbody.innerHTML += `
-            <tr>
-                <td>${lidNome}</td>
-                <td>${totalNoTime}</td>
-                <td>${respostasNoTime}</td>
-                <td>
-                    <div class="progress-box">
-                        <div class="bar-bg"><div class="bar-fill" style="width: ${perc}%"></div></div>
-                        <span class="perc-text">${perc}%</span>
-                    </div>
-                </td>
-            </tr>
-        `;
-    });
-}
-</script>
+                const row = `
+                    <tr>
+                        <td><b>${lider}</b></td>
+                        <td>${totalNoTime}</td>
+                        <td>${resNoTime}</td>
+                        <td>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar"><div class="progress-fill" style="width: ${perc}%"></div></div>
+                                <span class="badge ${perc >= 80 ? 'high' : 'low'}">${perc}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+    </script>
 </body>
 </html>
