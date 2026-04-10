@@ -75,7 +75,7 @@ async function processar() {
     const parse = (file) => new Promise(r => Papa.parse(file, { 
         header: true, 
         skipEmptyLines: true, 
-        delimiter: ";", // Forçado para seu arquivo
+        delimiter: ",", // Forçado para seu arquivo
         complete: res => r(res.data) 
     }));
 
