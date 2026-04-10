@@ -5,10 +5,10 @@
     <title>Adesão Pesquisa de Clima | Creditas</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        :root { --green: #8EDB00; --dark: #2D3A4B; --bg: #F4F7F6; }
-        body { font-family: Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .header { background: white; padding: 20px; border-bottom: 4px solid var(--green); border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        :root { --green: #8EDB00; --dark: #2D3A4B; --bg: #F4F7F6; --white: #FFFFFF; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .header { background: var(--white); padding: 20px 40px; border-bottom: 4px solid var(--green); border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .upload-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; align-items: end; }
         .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
         .filter-group label { display: block; font-size: 11px; font-weight: bold; color: #888; margin-bottom: 5px; text-transform: uppercase; }
@@ -26,14 +26,14 @@
 </head>
 <body>
 
-<div class="header"><h1>Monitoramento de Adesão - Creditas</h1></div>
+<div class="header"><h1>Monitoramento de Adesão - Pesquisa de Clima</h1></div>
 
 <div class="container">
     <div class="card">
         <div class="upload-grid">
             <div><label>1. Base Total (CSV)</label><input type="file" id="fMestre"></div>
             <div><label>2. Base Respostas (CSV)</label><input type="file" id="fRes"></div>
-            <button class="btn-process" onclick="processar()">Processar</button>
+            <button class="btn-process" onclick="processar()">Carregar Dashboard</button>
         </div>
     </div>
 
@@ -55,7 +55,7 @@
 
     <div class="card" style="padding:0">
         <table id="mainTable">
-            <thead><tr><th>Liderança</th><th>Time</th><th>Respostas</th><th>Adesão %</th></tr></thead>
+            <thead><tr><th>Liderança Direta</th><th>Total Alvo</th><th>Respondidos</th><th>Adesão %</th></tr></thead>
             <tbody></tbody>
         </table>
     </div>
@@ -64,16 +64,30 @@
 <script>
 let dataMestre = [], dataRes = [];
 
-// Função que resolve a diferença entre as bases (remove espaços, acentos e põe tudo em minúsculo)
+// Função para normalizar strings (tirar acentos, botar em minúsculo e tirar espaços)
 function norm(t) {
     if (!t) return "";
     return t.toString().toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+// Função inteligente que busca a coluna correta independente de variações no nome gerado pelo sistema
+function getColValue(row, possibleNames) {
+    const rowKeys = Object.keys(row);
+    for (let key of rowKeys) {
+        const cleanKey = key.trim().toLowerCase();
+        for (let possibleName of possibleNames) {
+            if (cleanKey === possibleName.toLowerCase()) {
+                return row[key];
+            }
+        }
+    }
+    return "";
+}
+
 async function processar() {
     const f1 = document.getElementById('fMestre').files[0];
     const f2 = document.getElementById('fRes').files[0];
-    if(!f1 || !f2) return alert("Selecione os dois arquivos!");
+    if(!f1 || !f2) return alert("Selecione os dois arquivos CSV!");
 
     const parse = (file) => new Promise(res => Papa.parse(file, { 
         header: true, skipEmptyLines: true, transformHeader: h => h.trim(), complete: r => res(r.data) 
@@ -91,7 +105,7 @@ function popularDropdowns() {
     const maps = { 'selBU': 'BU', 'selN1': 'Nível 1', 'selN2': 'Nível 2', 'selN3': 'Nível 3', 'selLid': 'Liderança - Nome' };
     for (let id in maps) {
         const select = document.getElementById(id);
-        const options = [...new Set(dataMestre.map(i => i[maps[id]]))].filter(v => v && v !== "-").sort();
+        const options = [...new Set(dataMestre.map(i => i[maps[id]] ? i[maps[id]].trim() : ""))].filter(Boolean).sort();
         select.innerHTML = '<option value="">Todos</option>' + options.map(o => `<option value="${o}">${o}</option>`).join('');
     }
 }
@@ -105,38 +119,63 @@ function calcular() {
         lid: document.getElementById('selLid').value
     };
 
-    // 1. Filtrar Base Total (Total de Pessoas por grupo)
+    // 1. Filtrar a Base Total (Quem DEVERIA responder)
     const mestreFiltrada = dataMestre.filter(i => 
-        (!f.bu || i['BU'] === f.bu) &&
-        (!f.n1 || i['Nível 1'] === f.n1) &&
-        (!f.n2 || i['Nível 2'] === f.n2) &&
-        (!f.n3 || i['Nível 3'] === f.n3) &&
-        (!f.lid || i['Liderança - Nome'] === f.lid)
+        (!f.bu || (i['BU'] && i['BU'].trim() === f.bu)) &&
+        (!f.n1 || (i['Nível 1'] && i['Nível 1'].trim() === f.n1)) &&
+        (!f.n2 || (i['Nível 2'] && i['Nível 2'].trim() === f.n2)) &&
+        (!f.n3 || (i['Nível 3'] && i['Nível 3'].trim() === f.n3)) &&
+        (!f.lid || (i['Liderança - Nome'] && i['Liderança - Nome'].trim() === f.lid))
     );
 
-    // 2. Filtrar Respondentes (Ajustando nomes de colunas diferentes)
+    // 2. Filtrar a Base Respostas (Quem RESPONDEU) 
+    // Usamos os possíveis nomes das colunas da exportação da sua pesquisa
     const resFiltrada = dataRes.filter(r => {
-        const matchBU = !f.bu || norm(r['Filtro_bu'] || r['BU']) === norm(f.bu);
-        const matchN1 = !f.n1 || norm(r['Filtro_nível_1'] || r['Nível 1']) === norm(f.n1);
-        const matchLid = !f.lid || norm(r['Filtro_lider_direto'] || r['Liderança - Nome']) === norm(f.lid);
-        return matchBU && matchN1 && matchLid;
+        const valBU = getColValue(r, ['BU', 'Filtro_bu']);
+        const valN1 = getColValue(r, ['Filtro_hierarquia_level_1', 'Filtro_nível_1', 'Filtro_filtro_nível_1']);
+        const valN2 = getColValue(r, ['Filtro_hierarquia_level_2', 'Filtro_nível_2', 'Filtro_filtro_nível_2']);
+        const valN3 = getColValue(r, ['Filtro_hierarquia_level_3', 'Filtro_nível_3', 'Filtro_filtro_nível_3']);
+        const valLid = getColValue(r, ['Filtro_filtro_lider_direto', 'Filtro_lider_direto', 'Liderança - Nome']);
+
+        const matchBU = !f.bu || norm(valBU) === norm(f.bu);
+        const matchN1 = !f.n1 || norm(valN1) === norm(f.n1);
+        const matchN2 = !f.n2 || norm(valN2) === norm(f.n2);
+        const matchN3 = !f.n3 || norm(valN3) === norm(f.n3);
+        const matchLid = !f.lid || norm(valLid) === norm(f.lid);
+
+        return matchBU && matchN1 && matchN2 && matchN3 && matchLid;
     });
 
+    // 3. Atualizar Visuais
     document.getElementById('valTotal').innerText = mestreFiltrada.length;
     document.getElementById('valRes').innerText = resFiltrada.length;
     const p = mestreFiltrada.length ? (resFiltrada.length / mestreFiltrada.length * 100).toFixed(1) : 0;
     document.getElementById('valPerc').innerText = p + '%';
 
-    // 3. Renderizar Tabela
+    // 4. Montar a Tabela (Apenas Líderes que fazem parte do filtro atual)
     const tbody = document.querySelector('#mainTable tbody');
     tbody.innerHTML = "";
-    const lideres = [...new Set(mestreFiltrada.map(i => i['Liderança - Nome']))].filter(Boolean);
+    
+    const lideres = [...new Set(mestreFiltrada.map(i => i['Liderança - Nome'] ? i['Liderança - Nome'].trim() : ""))].filter(Boolean);
 
     lideres.forEach(l => {
-        const totalL = dataMestre.filter(i => i['Liderança - Nome'] === l).length;
-        const feitoL = dataRes.filter(r => norm(r['Filtro_lider_direto'] || r['Liderança - Nome']) === norm(l)).length;
-        const pL = (feitoL / totalL * 100).toFixed(1);
-        tbody.innerHTML += `<tr><td>${l}</td><td>${totalL}</td><td>${feitoL}</td><td><div class="progress-bar"><div class="progress-fill" style="width:${pL}%"></div></div> ${pL}%</td></tr>`;
+        // Quantos do time deste líder deveriam responder? (Base Total)
+        const totalL = mestreFiltrada.filter(i => (i['Liderança - Nome'] && i['Liderança - Nome'].trim()) === l).length;
+        
+        // Quantos do time deste líder responderam? (Base Respostas)
+        const feitoL = resFiltrada.filter(r => {
+            const valLid = getColValue(r, ['Filtro_filtro_lider_direto', 'Filtro_lider_direto', 'Liderança - Nome']);
+            return norm(valLid) === norm(l);
+        }).length;
+
+        const pL = totalL > 0 ? (feitoL / totalL * 100).toFixed(1) : 0;
+        
+        tbody.innerHTML += `<tr>
+            <td><b>${l}</b></td>
+            <td>${totalL}</td>
+            <td>${feitoL}</td>
+            <td><div class="progress-bar"><div class="progress-fill" style="width:${pL}%"></div></div> <b>${pL}%</b></td>
+        </tr>`;
     });
 }
 </script>
